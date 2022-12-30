@@ -7,13 +7,13 @@ import (
 )
 
 type User struct {
+	id       int    `json:"id"`
 	Username string `json:"username"`
-	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 func getDB() *sql.DB {
-	db, err := sql.Open("mysql", "root:seafin@tcp(127.0.0.1)/fire")
+	db, err := sql.Open("mysql", "root:@tcp(127.0.0.1)/fire")
 	if err != nil {
 		panic(err.Error())
 	}
@@ -24,12 +24,12 @@ func (user User) Save() {
 	db := getDB()
 	defer db.Close()
 
-	insertStat, err := db.Prepare("INSERT INTO user(username, email, hash_password) VALUES (?, ?, ?)")
+	insertStat, err := db.Prepare("INSERT INTO user(username, password) VALUES (?, ?)")
 	if err != nil {
 		panic(err.Error())
 	}
 	defer insertStat.Close()
-	_, err = insertStat.Exec(user.Username, user.Email, user.Password)
+	_, err = insertStat.Exec(user.Username, user.Password)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -39,14 +39,25 @@ func GetUser(id int) {
 	db := getDB()
 	defer db.Close()
 
-	result, err := db.Query("select * from user where id = ?", id)
+	rows, err := db.Query("select * from user where id = ?", id)
 	if err != nil {
 		panic(err.Error())
 	}
 
-	columns, err := result.Columns()
-	if err != nil {
-		panic(err.Error())
+	results := make([]User, 10)
+
+	for rows.Next() {
+		var id int
+		var username string
+		var password string
+
+		rows.Scan(&id, &username, &password)
+		results = append(results, User{
+			id:       id,
+			Username: username,
+			Password: password,
+		})
+
+		fmt.Println(results)
 	}
-	fmt.Println(columns)
 }
