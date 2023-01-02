@@ -1,9 +1,17 @@
 package main
 
 import (
-	"fire/src/user"
+	"github.com/gin-gonic/gin"
+
+	"fire/src"
 )
 
+var router = gin.Default()
+
 func main() {
-	user.GetUser(1)
+	router.LoadHTMLGlob("templates/*")
+
+	auth.AddAuthRoutes(router)
+
+	router.Run(":8080")
 }
