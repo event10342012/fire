@@ -86,16 +86,16 @@ func login(c *gin.Context) {
 	userDB, err := GetUserByUsername(username)
 
 	if err != nil {
-		c.String(http.StatusNotFound, "User: %s not found", username)
+		c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("User: %s not found", username)})
 		return
 	}
 
 	if userDB.Password != loginUser.Password {
-		c.String(http.StatusUnauthorized, "Password is not correct")
+		c.JSON(http.StatusUnauthorized, gin.H{"message": "Password is not correct"})
 		return
 	}
 
-	c.JSON(http.StatusOK, "Login success")
+	c.JSON(http.StatusOK, gin.H{"message": "Login success"})
 }
 
 func register(c *gin.Context) {
@@ -104,7 +104,7 @@ func register(c *gin.Context) {
 	confirmPassword := c.PostForm("confirm_password")
 
 	if password != confirmPassword {
-		c.String(http.StatusNotFound, "password and confirm password dose not match")
+		c.JSON(http.StatusNotFound, gin.H{"message": "password and confirm password dose not match"})
 		return
 	}
 
@@ -114,10 +114,10 @@ func register(c *gin.Context) {
 	}
 	err := user.Save()
 	if err != nil {
-		c.String(http.StatusNotFound, "User: %s already exists")
+		c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("User: %s already exists", username)})
 		return
 	}
-	c.JSON(http.StatusOK, fmt.Sprintf("User: %s register success", username))
+	c.JSON(http.StatusOK, gin.H{"message": fmt.Sprintf("User: %s register success", username)})
 }
 
 func AddAuthRoutes(rg *gin.Engine) {
