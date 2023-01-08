@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
-
 	"fire/src"
+	"github.com/gin-gonic/gin"
 )
 
 var router = gin.Default()

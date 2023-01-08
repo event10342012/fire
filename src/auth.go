@@ -11,6 +11,10 @@ import (
 type User struct {
 	Id       int    `json:"id"`
 	Username string `json:"username"`
+}
+
+type UserDB struct {
+	User
 	Password string `json:"password"`
 }
 
@@ -22,7 +26,7 @@ func getDB() *sql.DB {
 	return db
 }
 
-func (user User) Save() error {
+func (user UserDB) Save() error {
 	db := getDB()
 	defer db.Close()
 
@@ -39,22 +43,20 @@ func GetUserByID(id int) (User, error) {
 	db := getDB()
 	defer db.Close()
 
-	row := db.QueryRow("select username, password from user where id = ?", id)
+	row := db.QueryRow("select username from user where id = ?", id)
 
 	var username string
-	var password string
 
-	err := row.Scan(&username, &password)
+	err := row.Scan(&username)
 	user := User{
 		Id:       id,
 		Username: username,
-		Password: password,
 	}
 
 	return user, err
 }
 
-func GetUserByUsername(username string) (User, error) {
+func getUserByUsername(username string) (UserDB, error) {
 	db := getDB()
 	defer db.Close()
 
@@ -65,9 +67,11 @@ func GetUserByUsername(username string) (User, error) {
 
 	err := row.Scan(&id, &password)
 
-	user := User{
-		Id:       id,
-		Username: username,
+	user := UserDB{
+		User: User{
+			Id:       id,
+			Username: username,
+		},
 		Password: password,
 	}
 
@@ -78,12 +82,14 @@ func login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	loginUser := User{
-		Username: username,
+	loginUser := UserDB{
+		User: User{
+			Username: username,
+		},
 		Password: password,
 	}
 
-	userDB, err := GetUserByUsername(username)
+	userDB, err := getUserByUsername(username)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"message": fmt.Sprintf("User: %s not found", username)})
@@ -108,8 +114,8 @@ func register(c *gin.Context) {
 		return
 	}
 
-	user := User{
-		Username: username,
+	user := UserDB{
+		User:     User{Username: username},
 		Password: password,
 	}
 	err := user.Save()
@@ -123,13 +129,6 @@ func register(c *gin.Context) {
 func AddAuthRoutes(rg *gin.Engine) {
 	auth := rg.Group("/auth")
 
-	auth.GET("/login", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "login.html", nil)
-	})
 	auth.POST("/login", login)
-
-	auth.GET("/register", func(c *gin.Context) {
-		c.HTML(http.StatusOK, "register.html", nil)
-	})
 	auth.POST("/register", register)
 }
