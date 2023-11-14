@@ -1,4 +1,4 @@
-package finance
+package model
 
 import (
 	"gorm.io/gorm"
@@ -25,9 +25,8 @@ type Transaction struct {
 
 func (transaction *Transaction) Read(db *gorm.DB, id int) error {
 	result := db.Take(transaction, id)
-
 	if result.Error != nil {
-		return nil
+		return result.Error
 	}
 	return nil
 }
@@ -41,7 +40,7 @@ func (transaction *Transaction) Create(db *gorm.DB) error {
 }
 
 func (transaction *Transaction) Update(db *gorm.DB) error {
-	result := db.Model(transaction).Updates(transaction)
+	result := db.Updates(transaction)
 	if result.Error != nil {
 		return result.Error
 	}

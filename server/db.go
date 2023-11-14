@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fire/model"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -14,6 +15,11 @@ func init() {
 	db, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic("failed to connect database")
+	}
+
+	err = db.AutoMigrate(model.User{}, model.Transaction{}, model.Position{}, model.Stock{})
+	if err != nil {
+		return
 	}
 }
 

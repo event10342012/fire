@@ -1,5 +1,6 @@
 Oauth2:
   Google:
-    ClientID: ""
-    ClientSecret: ""
+    ClientID: "223534559756-idf2u1r7uglqokpsedlevld2djk7qmeh.apps.googleusercontent.com"
+    ClientSecret: "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"
     RedirectURL:  "http://localhost:8080/callback"
+

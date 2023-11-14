@@ -1,9 +1,11 @@
-package auth
+package server
 
 import (
 	"context"
 	"encoding/json"
+	"fire/model"
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"net/http"
@@ -82,9 +84,11 @@ func getUserInfo(token *oauth2.Token) (UserInfo, error) {
 }
 
 func saveUser(userInfo *UserInfo) error {
-	user, err := readUserByGoogleId(userInfo.Id)
+	db := GetDB()
+	user := model.User{}
+	err := user.ReadByGoogleID(db, userInfo.Id)
 	if err != nil {
-		user = User{
+		user = model.User{
 			Email:       userInfo.Email,
 			GivenName:   userInfo.GivenName,
 			FamilyName:  userInfo.FamilyName,
@@ -94,10 +98,18 @@ func saveUser(userInfo *UserInfo) error {
 			IsSuperUser: false,
 			IsActive:    true,
 		}
-		err = createUser(&user)
+		err = user.Create(db)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func HashPassword(password string) string {
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return ""
+	}
+	return string(hashedPassword)
 }
