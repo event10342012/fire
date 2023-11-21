@@ -29,50 +29,6 @@ func (user *User) CheckPassword(password string) bool {
 	return err == nil
 }
 
-func (user *User) ReadByGoogleID(db *gorm.DB, googleID string) error {
-	result := db.Take(user, "google_id = ?", googleID)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (user *User) ReadByEmail(db *gorm.DB, email string) error {
-	result := db.Take(user, "email = ?", email)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (user *User) Read(db *gorm.DB, id int) error {
-	result := db.Take(user, id)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (user *User) Create(db *gorm.DB) error {
-	result := db.Create(user)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (user *User) Update(db *gorm.DB) error {
-	result := db.Updates(user)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
-}
-
-func (user *User) Delete(db *gorm.DB) error {
-	result := db.Delete(user)
-	if result.Error != nil {
-		return result.Error
-	}
-	return nil
+func (user *User) IsAuthenticated() bool {
+	return user.IsActive
 }

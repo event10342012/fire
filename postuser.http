@@ -1,0 +1,24 @@
+### post user
+POST http://localhost:8080/v1/user
+Content-Type: application/json
+
+{
+  "email": "test1234@gmail.com",
+  "given_name": "leo",
+  "family_name": "chenleo",
+  "password": "test",
+  "birthdate": "1994-11-19T00:00:00Z"
+}
+
+
+### put user
+PUT http://localhost:8080/v1/user/4
+Content-Type: application/json
+
+{
+  "email": "test1234@gmail.com",
+  "given_name": "test",
+  "family_name": "chenleo",
+  "password": "test1234",
+  "birthdate": "1994-11-19T00:00:00Z"
+}

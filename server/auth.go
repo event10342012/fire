@@ -83,11 +83,12 @@ func getUserInfo(token *oauth2.Token) (UserInfo, error) {
 	return userInfo, nil
 }
 
+// saveUser saves the user if not exist in the database else skip
 func saveUser(userInfo *UserInfo) error {
 	db := GetDB()
 	user := model.User{}
-	err := user.ReadByGoogleID(db, userInfo.Id)
-	if err != nil {
+	result := db.Take(&user, "email = ?", userInfo.Email)
+	if result.Error != nil {
 		user = model.User{
 			Email:       userInfo.Email,
 			GivenName:   userInfo.GivenName,
@@ -98,10 +99,7 @@ func saveUser(userInfo *UserInfo) error {
 			IsSuperUser: false,
 			IsActive:    true,
 		}
-		err = user.Create(db)
-		if err != nil {
-			return err
-		}
+		db.Create(&user)
 	}
 	return nil
 }

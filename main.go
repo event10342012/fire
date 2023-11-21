@@ -15,6 +15,7 @@ func main() {
 	r.GET("/callback", server.CallbackHandler)
 
 	route.SetupUserRoute(v1)
+	route.SetupAccountingRoute(v1)
 
 	err := r.Run(":8080")
 	if err != nil {

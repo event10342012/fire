@@ -6,9 +6,11 @@ import (
 )
 
 func SetupUserRoute(r *gin.RouterGroup) {
-	user := r.Group("user")
+	userRoute := r.Group("user")
 
-	user.GET("/:id", controller.GetUserByID)
-	user.POST("/", controller.PostUser)
-	user.PUT("/:id", controller.PutUser)
+	userRoute.GET("/", controller.GetUsers)
+	userRoute.GET("/:id", controller.GetUser)
+	userRoute.POST("/", controller.CreateUser)
+	userRoute.PUT("/:id", controller.UpdateUser)
+	userRoute.DELETE("/:id", controller.DeleteUser)
 }
