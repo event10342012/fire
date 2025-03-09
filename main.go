@@ -52,13 +52,9 @@ func initWebServer() *gin.Engine {
 	server := gin.Default()
 
 	server.Use(cors.New(cors.Config{
-		//AllowAllOrigins: true,
-		//AllowOrigins:     []string{"http://localhost:3000"},
 		AllowCredentials: true,
-
-		AllowHeaders: []string{"Content-Type"},
-		//AllowHeaders: []string{"content-type"},
-		//AllowMethods: []string{"POST"},
+		AllowHeaders:     []string{"Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"x-jwt-token"},
 		AllowOriginFunc: func(origin string) bool {
 			if strings.HasPrefix(origin, "http://localhost") {
 				//if strings.Contains(origin, "localhost") {
@@ -69,6 +65,16 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
+	useJwt(server)
+	return server
+}
+
+func useJwt(server *gin.Engine) {
+	login := &middleware.LoginJwtMiddlewareBuilder{}
+	server.Use(login.CheckLogin())
+}
+
+func useSession(server *gin.Engine) {
 	login := &middleware.LoginMiddlewareBuilder{}
 	// 存储数据的，也就是你 userId 存哪里
 	// 直接存 cookie
@@ -80,5 +86,4 @@ func initWebServer() *gin.Engine {
 		panic(err)
 	}
 	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
-	return server
 }

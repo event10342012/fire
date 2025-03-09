@@ -7,6 +7,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	jwt "github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"time"
 )
@@ -15,6 +16,8 @@ const (
 	emailRegexPattern = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 	// 和上面比起来，用 ` 看起来就比较清爽
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
+
+	JwtKey = "6jfbF1G0D2WcRjAZRq3Y2K47AGdL9nWT"
 )
 
 type UserHandler struct {
@@ -33,7 +36,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 
 func (handler *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup := server.Group("/users")
-	userGroup.POST("/login", handler.Login)
+	userGroup.POST("/login", handler.LoginJwt)
 	userGroup.POST("/signup", handler.Signup)
 	userGroup.GET("/profile", handler.Profile)
 	userGroup.POST("/edit", handler.Edit)
@@ -65,6 +68,42 @@ func (handler *UserHandler) Login(ctx *gin.Context) {
 			ctx.String(http.StatusOK, "System error")
 			return
 		}
+		ctx.String(http.StatusOK, "Login success")
+	case errors.Is(err, service.ErrInvalidUserOrPassword):
+		ctx.String(http.StatusOK, "email or password is invalid")
+	default:
+		ctx.String(http.StatusOK, "System error")
+	}
+}
+
+func (handler *UserHandler) LoginJwt(ctx *gin.Context) {
+	type loginReq struct {
+		Email    string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var req loginReq
+	err := ctx.Bind(&req)
+	if err != nil {
+		return
+	}
+
+	user, err := handler.svc.Login(ctx, req.Email, req.Password)
+	switch {
+	case err == nil:
+		uc := UserClaims{
+			RegisteredClaims: jwt.RegisteredClaims{
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+			},
+			UserID: user.ID,
+		}
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
+		tokenString, err := token.SignedString([]byte(JwtKey))
+		if err != nil {
+			ctx.String(http.StatusOK, "System error")
+			return
+		}
+		ctx.Header("x-jwt-token", tokenString)
 		ctx.String(http.StatusOK, "Login success")
 	case errors.Is(err, service.ErrInvalidUserOrPassword):
 		ctx.String(http.StatusOK, "email or password is invalid")
@@ -193,4 +232,9 @@ func (handler *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	ctx.String(http.StatusOK, "Edit success")
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	UserID int64 `json:"userId"`
 }
