@@ -8,7 +8,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -36,8 +35,8 @@ func (handler *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup := server.Group("/users")
 	userGroup.POST("/login", handler.Login)
 	userGroup.POST("/signup", handler.Signup)
-	userGroup.GET("/profile/:id", handler.Profile)
-	userGroup.POST("/edit/:id", handler.Edit)
+	userGroup.GET("/profile", handler.Profile)
+	userGroup.POST("/edit", handler.Edit)
 }
 
 func (handler *UserHandler) Login(ctx *gin.Context) {
@@ -128,14 +127,14 @@ func (handler *UserHandler) Signup(ctx *gin.Context) {
 }
 
 func (handler *UserHandler) Profile(ctx *gin.Context) {
-	id := ctx.Param("id")
-	uid, err := strconv.Atoi(id)
-	if err != nil {
+	sess := sessions.Default(ctx)
+	uid, ok := sess.Get("userId").(int64)
+	if !ok {
 		ctx.String(http.StatusOK, "System error")
 		return
 	}
 
-	u, err := handler.svc.FindById(ctx, uid)
+	u, err := handler.svc.FindById(ctx, int(uid))
 	if err != nil {
 		ctx.String(http.StatusOK, "System error")
 		return
@@ -157,19 +156,13 @@ func (handler *UserHandler) Profile(ctx *gin.Context) {
 }
 
 func (handler *UserHandler) Edit(ctx *gin.Context) {
-	id := ctx.Param("id")
-	uid, err := strconv.Atoi(id)
-
-	if err != nil {
-		ctx.String(http.StatusOK, "System error")
-	}
 	type editReq struct {
 		Nickname string `json:"nickname"`
 		Birthday string `json:"birthday"`
 		AboutMe  string `json:"aboutMe"`
 	}
 	var req editReq
-	err = ctx.Bind(&req)
+	err := ctx.Bind(&req)
 	if err != nil {
 		return
 	}
@@ -180,8 +173,15 @@ func (handler *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
+	sess := sessions.Default(ctx)
+	uid, ok := sess.Get("userId").(int64)
+	if !ok {
+		ctx.String(http.StatusOK, "System error")
+		return
+	}
+
 	err = handler.svc.UpdateNonSensitiveInfo(ctx, domain.User{
-		ID:       int64(uid),
+		ID:       uid,
 		Nickname: req.Nickname,
 		Birthday: birthday,
 		AboutMe:  req.AboutMe,

@@ -19,13 +19,15 @@ Content-Type: application/json
 }
 
 ### get user
-GET http://localhost:8080/users/profile/5
+GET http://localhost:8080/users/profile
 Content-Type: application/json
+Cookie: ssid=MTc0MTQ0MDUwNHwwbV9kZFBEeVZyVTRnSkJQb2VnQVJpbDFTdEYxRHJ3bTlhamVGMDVzRUFYLV9IWktiN1BRWkE5YkdjeVE3X2xXeHdRWGJSSXdDb0pPZWdnQlF5TzFIcU1XcFBKZEJraXN8hUWhBMbKVKIHdHGHzHuMMbjClSOZe5LId6W5TVVGWPU=
 
 
 ### edit user
 POST http://localhost:8080/users/edit/
 Content-Type: application/json
+Cookie: ssid=MTc0MTQ0MDUwNHwwbV9kZFBEeVZyVTRnSkJQb2VnQVJpbDFTdEYxRHJ3bTlhamVGMDVzRUFYLV9IWktiN1BRWkE5YkdjeVE3X2xXeHdRWGJSSXdDb0pPZWdnQlF5TzFIcU1XcFBKZEJraXN8hUWhBMbKVKIHdHGHzHuMMbjClSOZe5LId6W5TVVGWPU=
 
 {
   "nickname": "Leo",
