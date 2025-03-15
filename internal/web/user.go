@@ -95,7 +95,8 @@ func (handler *UserHandler) LoginJwt(ctx *gin.Context) {
 			RegisteredClaims: jwt.RegisteredClaims{
 				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
 			},
-			UserID: user.ID,
+			UserID:    user.ID,
+			UserAgent: ctx.GetHeader("User-Agent"),
 		}
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
 		tokenString, err := token.SignedString([]byte(JwtKey))
@@ -236,5 +237,6 @@ func (handler *UserHandler) Edit(ctx *gin.Context) {
 
 type UserClaims struct {
 	jwt.RegisteredClaims
-	UserID int64 `json:"userId"`
+	UserID    int64
+	UserAgent string
 }
