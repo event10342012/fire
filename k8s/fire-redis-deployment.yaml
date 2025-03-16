@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fire-redis
+  labels:
+    app: fire-redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fire-redis
+  template:
+    metadata:
+      name: fire-redis
+      labels:
+        app: fire-redis
+    spec:
+      containers:
+        - name: fire-redis
+          image: redis:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 6379
+              protocol: TCP
+      restartPolicy: Always
+      

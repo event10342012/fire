@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fire/config"
 	"fire/internal/repository"
 	"fire/internal/repository/dao"
 	"fire/internal/service"
@@ -36,7 +37,7 @@ func initUserHdl(db *gorm.DB, server *gin.Engine) {
 }
 
 func initDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open("root@tcp(localhost:3306)/fire"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +67,7 @@ func initWebServer() *gin.Engine {
 	}))
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
+		Addr:     config.Config.Redis.Addr,
 		Password: "",
 		DB:       0,
 	})
