@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fire-service
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: fire
+  template:
+    metadata:
+      labels:
+        app: fire
+    spec:
+      containers:
+        - name: fire
+          image: event10342012/fire:v0.0.1
+          ports:
+            - containerPort: 8080

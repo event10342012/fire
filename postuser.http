@@ -1,24 +1,37 @@
-### post user
-POST http://localhost:8080/v1/user
+### login user
+POST http://localhost:8080/users/login
 Content-Type: application/json
 
 {
-  "email": "test1234@gmail.com",
-  "given_name": "leo",
-  "family_name": "chenleo",
-  "password": "test",
-  "birthdate": "1994-11-19T00:00:00Z"
+  "email": "chenleo@sea.com",
+  "password": "qwe@1234"
 }
 
 
-### put user
-PUT http://localhost:8080/v1/user/4
+### sign up
+POST http://localhost:8080/users/signup
 Content-Type: application/json
 
 {
-  "email": "test1234@gmail.com",
-  "given_name": "test",
-  "family_name": "chenleo",
-  "password": "test1234",
-  "birthdate": "1994-11-19T00:00:00Z"
+  "email": "chenleo@sea.com",
+  "password": "qwe@1234",
+  "confirmPassword": "qwe@1234"
+}
+
+### get user
+GET http://localhost/users/profile
+Content-Type: application/json
+Cookie: ssid=MTc0MTQ0MDUwNHwwbV9kZFBEeVZyVTRnSkJQb2VnQVJpbDFTdEYxRHJ3bTlhamVGMDVzRUFYLV9IWktiN1BRWkE5YkdjeVE3X2xXeHdRWGJSSXdDb0pPZWdnQlF5TzFIcU1XcFBKZEJraXN8hUWhBMbKVKIHdHGHzHuMMbjClSOZe5LId6W5TVVGWPU=
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3NDMzMDI3NTUsIlVzZXJJRCI6MSwiVXNlckFnZW50IjoiSW50ZWxsaUogSFRUUCBDbGllbnQvR29MYW5kIDIwMjQuMy41In0.dsQ00vEoNJJd9A_QBY6NRnp-VraomhkhidqnJfDibNo
+
+
+### edit user
+POST http://localhost:8080/users/edit/
+Content-Type: application/json
+Cookie: ssid=MTc0MTQ0MDUwNHwwbV9kZFBEeVZyVTRnSkJQb2VnQVJpbDFTdEYxRHJ3bTlhamVGMDVzRUFYLV9IWktiN1BRWkE5YkdjeVE3X2xXeHdRWGJSSXdDb0pPZWdnQlF5TzFIcU1XcFBKZEJraXN8hUWhBMbKVKIHdHGHzHuMMbjClSOZe5LId6W5TVVGWPU=
+
+{
+  "nickname": "Leo",
+  "birthday": "2025-02-12",
+  "aboutMe": "Hi I'm Leo"
 }
