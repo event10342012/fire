@@ -93,7 +93,7 @@ func (handler *UserHandler) LoginJwt(ctx *gin.Context) {
 	case err == nil:
 		uc := UserClaims{
 			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24 * 7)),
+				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
 			},
 			UserID:    user.ID,
 			UserAgent: ctx.GetHeader("User-Agent"),

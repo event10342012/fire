@@ -7,10 +7,8 @@ import (
 	"fire/internal/service"
 	"fire/internal/web"
 	"fire/internal/web/middleware"
-	"fire/pkg/ginx/middleware/ratelimit"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
-	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -66,13 +64,13 @@ func initWebServer() *gin.Engine {
 		MaxAge: 12 * time.Hour,
 	}))
 
-	redisClient := redis.NewClient(&redis.Options{
-		Addr:     config.Config.Redis.Addr,
-		Password: "",
-		DB:       0,
-	})
-
-	server.Use(ratelimit.NewBuilder(redisClient, time.Minute, 100).Build())
+	//redisClient := redis.NewClient(&redis.Options{
+	//	Addr:     config.Config.Redis.Addr,
+	//	Password: "",
+	//	DB:       0,
+	//})
+	//
+	//server.Use(ratelimit.NewBuilder(redisClient, time.Minute, 100).Build())
 
 	useJwt(server)
 	return server

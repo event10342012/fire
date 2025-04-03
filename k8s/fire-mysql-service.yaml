@@ -9,5 +9,5 @@ spec:
     - protocol: TCP
       port: 3308
       targetPort: 3306
-  type: LoadBalancer
+  type: NodePort
   
