@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail = errors.New("邮箱冲突")
+	ErrDuplicateEmail = errors.New("email already exists")
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
@@ -58,7 +58,7 @@ func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error)
 	return user, err
 }
 
-func (dao *UserDAO) FindByID(ctx context.Context, id int) (User, error) {
+func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 	var user User
 	err := dao.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	return user, err
