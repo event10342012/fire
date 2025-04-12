@@ -58,7 +58,7 @@ func (svc *UserService) FindByEmail(ctx context.Context, email string) (domain.U
 	return user, nil
 }
 
-func (svc *UserService) FindById(ctx context.Context, id int) (domain.User, error) {
+func (svc *UserService) FindById(ctx context.Context, id int64) (domain.User, error) {
 	user, err := svc.repo.FindByID(ctx, id)
 	if err != nil {
 		return domain.User{}, err

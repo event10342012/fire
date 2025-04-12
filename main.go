@@ -3,12 +3,14 @@ package main
 import (
 	"fire/config"
 	"fire/internal/repository"
+	userCache "fire/internal/repository/cache"
 	"fire/internal/repository/dao"
 	"fire/internal/service"
 	"fire/internal/web"
 	"fire/internal/web/middleware"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"strings"
@@ -17,18 +19,22 @@ import (
 
 func main() {
 	db := initDB()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
 
 	server := initWebServer()
-	initUserHdl(db, server)
+	initUserHdl(db, redisClient, server)
 	err := server.Run(":8080")
 	if err != nil {
 		return
 	}
 }
 
-func initUserHdl(db *gorm.DB, server *gin.Engine) {
+func initUserHdl(db *gorm.DB, cache redis.Cmdable, server *gin.Engine) {
 	ud := dao.NewUserDAO(db)
-	ur := repository.NewUserRepository(ud)
+	uc := userCache.NewRedisUserCache(cache)
+	ur := repository.NewUserRepository(ud, uc)
 	us := service.NewUserService(ur)
 	hdl := web.NewUserHandler(us)
 	hdl.RegisterRoutes(server)
