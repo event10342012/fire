@@ -9,14 +9,19 @@ import (
 	"math/rand"
 )
 
+var (
+	ErrCodeSendTooMany = repository.ErrCodeVerifyTooMany
+)
+
 type CodeService struct {
 	repo repository.CodeRepository
 	sms  sms.Service
 }
 
-func NewCodeService(repo repository.CodeRepository) *CodeService {
+func NewCodeService(repo repository.CodeRepository, smsSvc sms.Service) *CodeService {
 	return &CodeService{
 		repo: repo,
+		sms:  smsSvc,
 	}
 }
 

@@ -3,6 +3,7 @@ package web
 import (
 	"errors"
 	"fire/internal/domain"
+	"fire/internal/repository"
 	"fire/internal/service"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
@@ -18,19 +19,23 @@ const (
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
 
 	JwtKey = "6jfbF1G0D2WcRjAZRq3Y2K47AGdL9nWT"
+
+	bizLogin = "login"
 )
 
 type UserHandler struct {
 	emailRegexPattern    *regexp.Regexp
 	passwordRegexPattern *regexp.Regexp
-	svc                  *service.UserService
+	userSvc              *service.UserService
+	codeSvc              *service.CodeService
 }
 
-func NewUserHandler(svc *service.UserService) *UserHandler {
+func NewUserHandler(userSvc *service.UserService, codeSvc *service.CodeService) *UserHandler {
 	return &UserHandler{
 		emailRegexPattern:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegexPattern: regexp.MustCompile(passwordRegexPattern, regexp.None),
-		svc:                  svc,
+		userSvc:              userSvc,
+		codeSvc:              codeSvc,
 	}
 }
 
@@ -40,6 +45,9 @@ func (handler *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup.POST("/signup", handler.Signup)
 	userGroup.GET("/profile", handler.Profile)
 	userGroup.POST("/edit", handler.Edit)
+
+	userGroup.POST("/login_sms/code/send", handler.SendSMSLoginCode)
+	userGroup.POST("login_sms", handler.LoginSMS)
 }
 
 func (handler *UserHandler) Login(ctx *gin.Context) {
@@ -54,7 +62,7 @@ func (handler *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	user, err := handler.svc.Login(ctx, req.Email, req.Password)
+	user, err := handler.userSvc.Login(ctx, req.Email, req.Password)
 	switch {
 	case err == nil:
 		sess := sessions.Default(ctx)
@@ -88,23 +96,10 @@ func (handler *UserHandler) LoginJwt(ctx *gin.Context) {
 		return
 	}
 
-	user, err := handler.svc.Login(ctx, req.Email, req.Password)
+	user, err := handler.userSvc.Login(ctx, req.Email, req.Password)
 	switch {
 	case err == nil:
-		uc := UserClaims{
-			RegisteredClaims: jwt.RegisteredClaims{
-				ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-			},
-			UserID:    user.ID,
-			UserAgent: ctx.GetHeader("User-Agent"),
-		}
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
-		tokenString, err := token.SignedString([]byte(JwtKey))
-		if err != nil {
-			ctx.String(http.StatusOK, "System error")
-			return
-		}
-		ctx.Header("x-jwt-token", tokenString)
+		handler.setJWTToken(ctx, user.ID)
 		ctx.String(http.StatusOK, "Login success")
 	case errors.Is(err, service.ErrInvalidUserOrPassword):
 		ctx.String(http.StatusOK, "email or password is invalid")
@@ -150,7 +145,7 @@ func (handler *UserHandler) Signup(ctx *gin.Context) {
 		return
 	}
 
-	err = handler.svc.Signup(ctx, domain.User{
+	err = handler.userSvc.Signup(ctx, domain.User{
 		Email:       req.Email,
 		Password:    req.Password,
 		IsSuperUser: false,
@@ -174,7 +169,7 @@ func (handler *UserHandler) Profile(ctx *gin.Context) {
 		return
 	}
 
-	u, err := handler.svc.FindById(ctx, int(uid))
+	u, err := handler.userSvc.FindById(ctx, uid)
 	if err != nil {
 		ctx.String(http.StatusOK, "System error")
 		return
@@ -220,7 +215,7 @@ func (handler *UserHandler) Edit(ctx *gin.Context) {
 		return
 	}
 
-	err = handler.svc.UpdateNonSensitiveInfo(ctx, domain.User{
+	err = handler.userSvc.UpdateNonSensitiveInfo(ctx, domain.User{
 		ID:       uid,
 		Nickname: req.Nickname,
 		Birthday: birthday,
@@ -233,6 +228,121 @@ func (handler *UserHandler) Edit(ctx *gin.Context) {
 	}
 
 	ctx.String(http.StatusOK, "Edit success")
+}
+
+func (handler *UserHandler) SendSMSLoginCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+	}
+	var req Req
+	err := ctx.Bind(&req)
+	if err != nil {
+		return
+	}
+
+	if req.Phone == "" {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "phone is empty",
+		})
+		return
+	}
+
+	err = handler.codeSvc.Send(ctx, bizLogin, req.Phone)
+	switch {
+	case err == nil:
+		ctx.JSON(http.StatusOK, Result{
+			Code: 0,
+			Msg:  "send success",
+		})
+	case errors.Is(err, service.ErrCodeSendTooMany):
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "send too many",
+		})
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+	}
+}
+
+func (handler *UserHandler) LoginSMS(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+		Code  string `json:"code"`
+	}
+
+	var req Req
+	err := ctx.Bind(&req)
+	if err != nil {
+		return
+	}
+
+	ok, err := handler.codeSvc.Verify(ctx, bizLogin, req.Phone, req.Code)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+		return
+	}
+
+	if !ok {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "code is invalid",
+		})
+		return
+	}
+
+	u, err := handler.FindOrCreate(ctx, req.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+	}
+	handler.setJWTToken(ctx, u.ID)
+	ctx.JSON(http.StatusOK, Result{
+		Code: 0,
+		Msg:  "Login success",
+	})
+}
+
+func (handler *UserHandler) FindOrCreate(ctx *gin.Context, phone string) (domain.User, error) {
+	u, err := handler.userSvc.FindByPhone(ctx, phone)
+	if !errors.Is(err, repository.ErrUserNotFound) {
+		return u, err
+	}
+
+	err = handler.userSvc.Create(ctx, domain.User{
+		Phone: phone,
+	})
+
+	if err != nil && !errors.Is(err, repository.ErrDuplicateUser) {
+		return domain.User{}, err
+	}
+	// may cause error due to replication delay between master and slave db
+	return handler.userSvc.FindByPhone(ctx, phone)
+}
+
+func (handler *UserHandler) setJWTToken(ctx *gin.Context, id int64) {
+	uc := UserClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
+		},
+		UserID:    id,
+		UserAgent: ctx.GetHeader("User-Agent"),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
+	tokenString, err := token.SignedString([]byte(JwtKey))
+	if err != nil {
+		ctx.String(http.StatusOK, "System error")
+		return
+	}
+	ctx.Header("x-jwt-token", tokenString)
 }
 
 type UserClaims struct {

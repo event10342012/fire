@@ -3,9 +3,10 @@ package main
 import (
 	"fire/config"
 	"fire/internal/repository"
-	userCache "fire/internal/repository/cache"
+	"fire/internal/repository/cache"
 	"fire/internal/repository/dao"
 	"fire/internal/service"
+	localSms "fire/internal/service/sms/local"
 	"fire/internal/web"
 	"fire/internal/web/middleware"
 	"github.com/gin-contrib/cors"
@@ -24,20 +25,32 @@ func main() {
 	})
 
 	server := initWebServer()
-	initUserHdl(db, redisClient, server)
+	codeSvc := initCodeSvc(redisClient)
+	initUserHdl(db, redisClient, codeSvc, server)
 	err := server.Run(":8080")
 	if err != nil {
 		return
 	}
 }
 
-func initUserHdl(db *gorm.DB, cache redis.Cmdable, server *gin.Engine) {
-	ud := dao.NewUserDAO(db)
-	uc := userCache.NewRedisUserCache(cache)
-	ur := repository.NewUserRepository(ud, uc)
-	us := service.NewUserService(ur)
-	hdl := web.NewUserHandler(us)
-	hdl.RegisterRoutes(server)
+func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
+	userSvc := initUserSvc(db, redisClient)
+	userHdl := web.NewUserHandler(userSvc, codeSvc)
+	userHdl.RegisterRoutes(server)
+}
+
+func initUserSvc(db *gorm.DB, redisClient redis.Cmdable) *service.UserService {
+	userDao := dao.NewUserDAO(db)
+	userCache := cache.NewRedisUserCache(redisClient)
+	userRepo := repository.NewUserRepository(userDao, userCache)
+	return service.NewUserService(userRepo)
+}
+
+func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+	codeCache := cache.NewCodeCache(redisClient)
+	codeRepo := repository.NewCodeRepository(codeCache)
+	smsSvc := localSms.NewService()
+	return service.NewCodeService(codeRepo, smsSvc)
 }
 
 func initDB() *gorm.DB {

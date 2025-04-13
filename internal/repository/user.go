@@ -2,16 +2,18 @@ package repository
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fire/internal/domain"
 	"fire/internal/repository/cache"
 	"fire/internal/repository/dao"
 	"log"
+	"time"
 )
 
 var (
-	ErrDuplicateEmail = dao.ErrDuplicateEmail
-	ErrUserNotFound   = dao.ErrRecordNotFound
+	ErrDuplicateUser = dao.ErrDuplicateUser
+	ErrUserNotFound  = dao.ErrRecordNotFound
 )
 
 type UserRepository struct {
@@ -26,11 +28,8 @@ func NewUserRepository(dao dao.UserDAO, cache cache.UserCache) *UserRepository {
 	}
 }
 
-func (repo *UserRepository) Create(ctx context.Context, user *domain.User) error {
-	return repo.dao.Insert(ctx, dao.User{
-		Email:    user.Email,
-		Password: user.Password,
-	})
+func (repo *UserRepository) Create(ctx context.Context, user domain.User) error {
+	return repo.dao.Insert(ctx, repo.toEntity(user))
 }
 
 func (repo *UserRepository) FindByEmail(ctx context.Context, email string) (domain.User, error) {
@@ -75,8 +74,52 @@ func (repo *UserRepository) UpdateNonZeroFields(ctx context.Context, user domain
 
 func (repo *UserRepository) toDomain(user dao.User) domain.User {
 	return domain.User{
-		ID:       user.ID,
-		Email:    user.Email,
-		Password: user.Password,
+		ID:          user.ID,
+		Email:       user.Email.String,
+		Password:    user.Password,
+		Phone:       user.Phone.String,
+		GivenName:   user.GivenName,
+		FamilyName:  user.FamilyName,
+		Nickname:    user.Nickname,
+		Birthday:    time.Unix(0, user.Birthday),
+		AboutMe:     user.AboutMe,
+		Picture:     user.Picture,
+		Locale:      user.Locale,
+		GoogleId:    user.GoogleId,
+		IsSuperUser: user.IsSuperUser,
+		IsActive:    user.IsActive,
 	}
+}
+
+func (repo *UserRepository) toEntity(user domain.User) dao.User {
+	return dao.User{
+		ID: user.ID,
+		Email: sql.NullString{
+			String: user.Email,
+			Valid:  user.Email != "",
+		},
+		Password: user.Password,
+		Phone: sql.NullString{
+			String: user.Phone,
+			Valid:  user.Phone != "",
+		},
+		GivenName:   user.GivenName,
+		FamilyName:  user.FamilyName,
+		Nickname:    user.Nickname,
+		Birthday:    user.Birthday.UnixMilli(),
+		AboutMe:     user.AboutMe,
+		Picture:     user.Picture,
+		Locale:      user.Locale,
+		GoogleId:    user.GoogleId,
+		IsSuperUser: user.IsSuperUser,
+		IsActive:    user.IsActive,
+	}
+}
+
+func (repo *UserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	u, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(u), nil
 }

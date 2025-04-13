@@ -11,8 +11,8 @@ type CodeRepository struct {
 	cache cache.CodeCache
 }
 
-func NewCodeRepository(cache cache.CodeCache) *CodeRepository {
-	return &CodeRepository{
+func NewCodeRepository(cache cache.CodeCache) CodeRepository {
+	return CodeRepository{
 		cache: cache,
 	}
 }

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	ErrDuplicateEmail        = repository.ErrDuplicateEmail
+	ErrDuplicateEmail        = repository.ErrDuplicateUser
 	ErrInvalidUserOrPassword = errors.New("email not found or password is incorrect")
 )
 
@@ -47,7 +47,7 @@ func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
 		return err
 	}
 	user.Password = string(hash)
-	return svc.repo.Create(ctx, &user)
+	return svc.repo.Create(ctx, user)
 }
 
 func (svc *UserService) FindByEmail(ctx context.Context, email string) (domain.User, error) {
@@ -68,4 +68,12 @@ func (svc *UserService) FindById(ctx context.Context, id int64) (domain.User, er
 
 func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error {
 	return svc.repo.UpdateNonZeroFields(ctx, user)
+}
+
+func (svc *UserService) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+	return svc.repo.FindByPhone(ctx, phone)
+}
+
+func (svc *UserService) Create(ctx context.Context, user domain.User) error {
+	return svc.repo.Create(ctx, user)
 }
