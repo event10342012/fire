@@ -41,7 +41,7 @@ func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeSe
 
 func initUserSvc(db *gorm.DB, redisClient redis.Cmdable) *service.UserService {
 	userDao := dao.NewUserDAO(db)
-	userCache := cache.NewRedisUserCache(redisClient)
+	userCache := cache.NewUserCache(redisClient)
 	userRepo := repository.NewUserRepository(userDao, userCache)
 	return service.NewUserService(userRepo)
 }
