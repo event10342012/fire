@@ -21,7 +21,7 @@ type UserService interface {
 	UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	Create(ctx context.Context, user domain.User) error
-	//FindOrCreate(ctx context.Context, user domain.User) (domain.User, error)
+	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
 }
 
 type userService struct {
@@ -87,4 +87,21 @@ func (svc *userService) FindByPhone(ctx context.Context, phone string) (domain.U
 
 func (svc *userService) Create(ctx context.Context, user domain.User) error {
 	return svc.repo.Create(ctx, user)
+}
+
+func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.User, error) {
+	user, err := svc.repo.FindByPhone(ctx, phone)
+	if !errors.Is(err, repository.ErrUserNotFound) {
+		// in two cases
+		// 1. user exists, err == nil
+		// 2. system error, err != nil
+		return user, err
+	}
+
+	err = svc.repo.Create(ctx, domain.User{Phone: phone})
+	if err != nil || errors.Is(err, ErrDuplicateEmail) {
+		return domain.User{}, err
+	}
+
+	return svc.repo.FindByPhone(ctx, phone)
 }
