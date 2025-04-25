@@ -13,17 +13,28 @@ var (
 	ErrInvalidUserOrPassword = errors.New("email not found or password is incorrect")
 )
 
-type UserService struct {
-	repo *repository.UserRepository
+type UserService interface {
+	Login(ctx context.Context, email, password string) (domain.User, error)
+	Signup(ctx context.Context, user domain.User) error
+	FindByEmail(ctx context.Context, email string) (domain.User, error)
+	FindById(ctx context.Context, id int64) (domain.User, error)
+	UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error
+	FindByPhone(ctx context.Context, phone string) (domain.User, error)
+	Create(ctx context.Context, user domain.User) error
+	//FindOrCreate(ctx context.Context, user domain.User) (domain.User, error)
 }
 
-func NewUserService(repo *repository.UserRepository) *UserService {
-	return &UserService{
+type userService struct {
+	repo repository.UserRepository
+}
+
+func NewUserService(repo repository.UserRepository) UserService {
+	return &userService{
 		repo: repo,
 	}
 }
 
-func (svc *UserService) Login(ctx context.Context, email, password string) (domain.User, error) {
+func (svc *userService) Login(ctx context.Context, email, password string) (domain.User, error) {
 	user, err := svc.repo.FindByEmail(ctx, email)
 
 	if errors.Is(err, repository.ErrUserNotFound) {
@@ -41,7 +52,7 @@ func (svc *UserService) Login(ctx context.Context, email, password string) (doma
 	return user, nil
 }
 
-func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
+func (svc *userService) Signup(ctx context.Context, user domain.User) error {
 	hash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return err
@@ -50,7 +61,7 @@ func (svc *UserService) Signup(ctx context.Context, user domain.User) error {
 	return svc.repo.Create(ctx, user)
 }
 
-func (svc *UserService) FindByEmail(ctx context.Context, email string) (domain.User, error) {
+func (svc *userService) FindByEmail(ctx context.Context, email string) (domain.User, error) {
 	user, err := svc.repo.FindByEmail(ctx, email)
 	if err != nil {
 		return domain.User{}, err
@@ -58,7 +69,7 @@ func (svc *UserService) FindByEmail(ctx context.Context, email string) (domain.U
 	return user, nil
 }
 
-func (svc *UserService) FindById(ctx context.Context, id int64) (domain.User, error) {
+func (svc *userService) FindById(ctx context.Context, id int64) (domain.User, error) {
 	user, err := svc.repo.FindByID(ctx, id)
 	if err != nil {
 		return domain.User{}, err
@@ -66,14 +77,14 @@ func (svc *UserService) FindById(ctx context.Context, id int64) (domain.User, er
 	return user, nil
 }
 
-func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error {
+func (svc *userService) UpdateNonSensitiveInfo(ctx context.Context, user domain.User) error {
 	return svc.repo.UpdateNonZeroFields(ctx, user)
 }
 
-func (svc *UserService) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
+func (svc *userService) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 	return svc.repo.FindByPhone(ctx, phone)
 }
 
-func (svc *UserService) Create(ctx context.Context, user domain.User) error {
+func (svc *userService) Create(ctx context.Context, user domain.User) error {
 	return svc.repo.Create(ctx, user)
 }

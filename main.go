@@ -33,20 +33,20 @@ func main() {
 	}
 }
 
-func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc *service.CodeService, server *gin.Engine) {
+func initUserHdl(db *gorm.DB, redisClient redis.Cmdable, codeSvc service.CodeService, server *gin.Engine) {
 	userSvc := initUserSvc(db, redisClient)
 	userHdl := web.NewUserHandler(userSvc, codeSvc)
 	userHdl.RegisterRoutes(server)
 }
 
-func initUserSvc(db *gorm.DB, redisClient redis.Cmdable) *service.UserService {
+func initUserSvc(db *gorm.DB, redisClient redis.Cmdable) service.UserService {
 	userDao := dao.NewUserDAO(db)
 	userCache := cache.NewUserCache(redisClient)
 	userRepo := repository.NewUserRepository(userDao, userCache)
 	return service.NewUserService(userRepo)
 }
 
-func initCodeSvc(redisClient redis.Cmdable) *service.CodeService {
+func initCodeSvc(redisClient redis.Cmdable) service.CodeService {
 	codeCache := cache.NewCodeCache(redisClient)
 	codeRepo := repository.NewCodeRepository(codeCache)
 	smsSvc := localSms.NewService()

@@ -14,17 +14,26 @@ var (
 	ErrRecordNotFound = gorm.ErrRecordNotFound
 )
 
-type UserDAO struct {
+type UserDAO interface {
+	Insert(ctx context.Context, user User) error
+	UpdateByID(ctx context.Context, user User) error
+	Update(ctx context.Context, user User) error
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindByID(ctx context.Context, id int64) (User, error)
+	FindByPhone(ctx context.Context, phone string) (User, error)
+}
+
+type GormUserDAO struct {
 	db *gorm.DB
 }
 
 func NewUserDAO(db *gorm.DB) UserDAO {
-	return UserDAO{
+	return &GormUserDAO{
 		db: db,
 	}
 }
 
-func (dao *UserDAO) Insert(ctx context.Context, user User) error {
+func (dao *GormUserDAO) Insert(ctx context.Context, user User) error {
 	now := time.Now().UnixMilli()
 	user.CreatedAt = now
 	user.UpdatedAt = now
@@ -38,7 +47,7 @@ func (dao *UserDAO) Insert(ctx context.Context, user User) error {
 	return err
 }
 
-func (dao *UserDAO) UpdateByID(ctx context.Context, user User) error {
+func (dao *GormUserDAO) UpdateByID(ctx context.Context, user User) error {
 	return dao.db.WithContext(ctx).Model(&user).Updates(User{
 		Birthday:  user.Birthday,
 		Nickname:  user.Nickname,
@@ -47,25 +56,25 @@ func (dao *UserDAO) UpdateByID(ctx context.Context, user User) error {
 	}).Error
 }
 
-func (dao *UserDAO) Update(ctx context.Context, user User) error {
+func (dao *GormUserDAO) Update(ctx context.Context, user User) error {
 	now := time.Now().UnixMilli()
 	user.UpdatedAt = now
 	return dao.db.WithContext(ctx).Save(user).Error
 }
 
-func (dao *UserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
+func (dao *GormUserDAO) FindByEmail(ctx context.Context, email string) (User, error) {
 	var user User
 	err := dao.db.WithContext(ctx).Where("email = ?", email).First(&user).Error
 	return user, err
 }
 
-func (dao *UserDAO) FindByID(ctx context.Context, id int64) (User, error) {
+func (dao *GormUserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 	var user User
 	err := dao.db.WithContext(ctx).Where("id = ?", id).First(&user).Error
 	return user, err
 }
 
-func (dao *UserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
+func (dao *GormUserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
 	var user User
 	err := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error
 	return user, err
