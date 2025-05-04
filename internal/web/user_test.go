@@ -6,7 +6,7 @@ import (
 	"fire/internal/service"
 	svcmock "fire/internal/service/mocks"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/assert/v2"
+	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -122,6 +122,31 @@ func TestUserHandler_Signup(t *testing.T) {
 			},
 			wantCode: http.StatusOK,
 			wantBody: "password is invalid",
+		},
+		{
+			name: "Signup Email is already exist",
+			mock: func(ctrl *gomock.Controller) (service.CodeService, service.UserService) {
+				userSvc := svcmock.NewMockUserService(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), domain.User{
+					Email:       "test@gmail.com",
+					Password:    "hello#world123",
+					IsSuperUser: false,
+					IsActive:    true,
+				}).Return(service.ErrDuplicateEmail)
+				codeSvc := svcmock.NewMockCodeService(ctrl)
+				return codeSvc, userSvc
+			},
+			reqBuilder: func(t *testing.T) *http.Request {
+				req := httptest.NewRequest(http.MethodPost, "/users/signup", bytes.NewReader([]byte(`
+{"email": "test@gmail.com",
+"password": "hello#world123",
+"confirmPassword": "hello#world123"}
+`)))
+				req.Header.Set("Content-Type", "application/json")
+				return req
+			},
+			wantCode: http.StatusOK,
+			wantBody: "Email is already exist",
 		},
 	}
 
