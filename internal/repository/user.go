@@ -89,7 +89,7 @@ func (repo *CacheUserRepository) toDomain(user dao.User) domain.User {
 		GivenName:   user.GivenName,
 		FamilyName:  user.FamilyName,
 		Nickname:    user.Nickname,
-		Birthday:    time.Unix(0, user.Birthday),
+		Birthday:    time.UnixMilli(user.Birthday),
 		AboutMe:     user.AboutMe,
 		Picture:     user.Picture,
 		Locale:      user.Locale,
