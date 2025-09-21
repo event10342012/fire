@@ -4,11 +4,12 @@ import (
 	"fire/internal/web"
 	"fire/internal/web/middleware"
 	"fire/pkg/ginx/middleware/ratelimit"
+	"strings"
+	"time"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
-	"strings"
-	"time"
 )
 
 func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler) *gin.Engine {
@@ -33,7 +34,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		ratelimit.NewBuilder(redisClient, time.Second, 1).Build(),
+		ratelimit.NewBuilder(redisClient, time.Second, 100).Build(),
 		(&middleware.LoginJwtMiddlewareBuilder{}).CheckLogin(),
 	}
 }

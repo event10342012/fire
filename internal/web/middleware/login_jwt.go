@@ -3,12 +3,13 @@ package middleware
 import (
 	"encoding/gob"
 	"fire/internal/web"
-	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"log"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginJwtMiddlewareBuilder struct {
@@ -18,7 +19,7 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	gob.Register(time.Time{})
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
-		if path == "/users/signup" || path == "/users/login" {
+		if path == "/users/signup" || path == "/users/login" || path == "/ping" {
 			// 不需要登录校验
 			return
 		}

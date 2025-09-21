@@ -3,6 +3,7 @@ module fire
 go 1.24.1
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/dlclark/regexp2 v1.11.5
 	github.com/ecodeclub/ekit v0.0.9
 	github.com/gin-contrib/cors v1.7.3
@@ -21,7 +22,6 @@ require (
 )
 
 require (
-	github.com/DATA-DOG/go-sqlmock v1.5.2 // indirect
 	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect

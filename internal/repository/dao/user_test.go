@@ -3,11 +3,13 @@ package dao
 import (
 	"context"
 	"database/sql"
+	"testing"
+
 	"github.com/DATA-DOG/go-sqlmock"
+	mysqlDriver "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"testing"
 )
 
 func TestGormUserDAO_Insert(t *testing.T) {
@@ -31,6 +33,19 @@ func TestGormUserDAO_Insert(t *testing.T) {
 			ctx:     context.Background(),
 			user:    User{ID: 1},
 			wantErr: nil,
+		},
+		{
+			name: "email conflict",
+			mock: func(t *testing.T) *sql.DB {
+				db, mock, err := sqlmock.New()
+				assert.NoError(t, err)
+				mock.ExpectExec("INSERT INTO .*").
+					WillReturnError(&mysqlDriver.MySQLError{Number: 1062})
+				return db
+			},
+			ctx:     context.Background(),
+			user:    User{ID: 1},
+			wantErr: ErrDuplicateUser,
 		},
 	}
 

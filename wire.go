@@ -1,3 +1,5 @@
+//go:build wireinject
+
 package main
 
 import (
@@ -7,6 +9,7 @@ import (
 	"fire/internal/service"
 	"fire/internal/web"
 	"fire/ioc"
+
 	"github.com/gin-gonic/gin"
 	"github.com/google/wire"
 )
