@@ -4,6 +4,7 @@ import (
 	"fire/internal/web"
 	"fire/internal/web/middleware"
 	"fire/pkg/ginx/middleware/ratelimit"
+	"fire/pkg/limiter"
 	"strings"
 	"time"
 
@@ -34,7 +35,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 			},
 			MaxAge: 12 * time.Hour,
 		}),
-		ratelimit.NewBuilder(redisClient, time.Second, 100).Build(),
+		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
 		(&middleware.LoginJwtMiddlewareBuilder{}).CheckLogin(),
 	}
 }

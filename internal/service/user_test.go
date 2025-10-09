@@ -5,10 +5,11 @@ import (
 	"fire/internal/domain"
 	"fire/internal/repository"
 	repomock "fire/internal/repository/mocks"
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
-	"testing"
 )
 
 func TestPasswordEncrypt(t *testing.T) {
