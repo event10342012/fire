@@ -19,8 +19,8 @@ func InitWebserver() *gin.Engine {
 		dao.NewUserDAO,
 		cache.NewCodeCache, cache.NewUserCache,
 		repository.NewUserRepository, repository.NewCodeRepository,
-		ioc.InitSMS, service.NewCodeService, service.NewUserService,
-		web.NewUserHandler,
+		ioc.InitSMS, ioc.InitGoogleService, service.NewCodeService, service.NewUserService,
+		web.NewUserHandler, web.NewOAuth2GoogleHandler,
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer)
 	return gin.Default()

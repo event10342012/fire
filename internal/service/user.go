@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fire/internal/domain"
 	"fire/internal/repository"
+
 	"golang.org/x/crypto/bcrypt"
 )
 

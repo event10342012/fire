@@ -19,7 +19,11 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 	gob.Register(time.Time{})
 	return func(ctx *gin.Context) {
 		path := ctx.Request.URL.Path
-		if path == "/users/signup" || path == "/users/login" || path == "/ping" {
+		if path == "/users/signup" ||
+			path == "/users/login" ||
+			path == "/ping" ||
+			path == "/oauth2/google/login" ||
+			path == "/oauth2/google/callback" {
 			// 不需要登录校验
 			return
 		}
