@@ -22,6 +22,7 @@ type UserRepository interface {
 	FindByID(ctx context.Context, id int64) (domain.User, error)
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	UpdateNonZeroFields(ctx context.Context, user domain.User) error
+	FindByGoogleId(ctx context.Context, googleId string) (domain.User, error)
 }
 
 type CacheUserRepository struct {
@@ -126,6 +127,14 @@ func (repo *CacheUserRepository) toEntity(user domain.User) dao.User {
 
 func (repo *CacheUserRepository) FindByPhone(ctx context.Context, phone string) (domain.User, error) {
 	u, err := repo.dao.FindByPhone(ctx, phone)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return repo.toDomain(u), nil
+}
+
+func (repo *CacheUserRepository) FindByGoogleId(ctx context.Context, googleId string) (domain.User, error) {
+	u, err := repo.dao.FindByGoogleId(ctx, googleId)
 	if err != nil {
 		return domain.User{}, err
 	}

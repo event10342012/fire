@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
+
 	"github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
-	"time"
 )
 
 var (
@@ -21,6 +22,7 @@ type UserDAO interface {
 	FindByEmail(ctx context.Context, email string) (User, error)
 	FindByID(ctx context.Context, id int64) (User, error)
 	FindByPhone(ctx context.Context, phone string) (User, error)
+	FindByGoogleId(ctx context.Context, googleId string) (User, error)
 }
 
 type GormUserDAO struct {
@@ -77,6 +79,12 @@ func (dao *GormUserDAO) FindByID(ctx context.Context, id int64) (User, error) {
 func (dao *GormUserDAO) FindByPhone(ctx context.Context, phone string) (User, error) {
 	var user User
 	err := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&user).Error
+	return user, err
+}
+
+func (dao *GormUserDAO) FindByGoogleId(ctx context.Context, googleId string) (User, error) {
+	var user User
+	err := dao.db.WithContext(ctx).Where("google_id = ?", googleId).First(&user).Error
 	return user, err
 }
 

@@ -23,6 +23,7 @@ type UserService interface {
 	FindByPhone(ctx context.Context, phone string) (domain.User, error)
 	Create(ctx context.Context, user domain.User) error
 	FindOrCreate(ctx context.Context, phone string) (domain.User, error)
+	FindOrCreateByGoogle(ctx context.Context, googleUser domain.GoogleUser) (domain.User, error)
 }
 
 type userService struct {
@@ -105,4 +106,25 @@ func (svc *userService) FindOrCreate(ctx context.Context, phone string) (domain.
 	}
 
 	return svc.repo.FindByPhone(ctx, phone)
+}
+
+func (svc *userService) FindOrCreateByGoogle(ctx context.Context, googleUser domain.GoogleUser) (domain.User, error) {
+	user, err := svc.repo.FindByGoogleId(ctx, googleUser.Sub)
+	if !errors.Is(err, repository.ErrUserNotFound) {
+		// in two cases
+		// 1. user exists, err == nil
+		// 2. system error, err != nil
+		return user, err
+	}
+
+	err = svc.repo.Create(ctx, domain.User{
+		GoogleId:   googleUser.Sub,
+		Email:      googleUser.Email,
+		GivenName:  googleUser.GivenName,
+		FamilyName: googleUser.FamilyName,
+	})
+	if err != nil {
+		return domain.User{}, err
+	}
+	return svc.repo.FindByGoogleId(ctx, googleUser.Sub)
 }

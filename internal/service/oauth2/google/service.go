@@ -5,34 +5,18 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
+	"fire/internal/domain"
 	"net/http"
 
 	"golang.org/x/oauth2"
 )
 
-// Keys used in session map
 const (
-	SessionKeyState      = "oauth_state"
-	SessionKeyIDToken    = "id_token"
-	SessionKeyAccessTok  = "access_token"
-	SessionKeyRefreshTok = "refresh_token"
-	SessionKeyUser       = "user_info" // JSON string
-	UserInfoUrl          = "https://www.googleapis.com/oauth2/v3/userinfo"
+	userInfoUrl = "https://www.googleapis.com/oauth2/v3/userinfo"
 )
 
 type AuthService struct {
 	Config *oauth2.Config
-}
-
-type User struct {
-	Sub           string `json:"sub"`
-	Name          string `json:"name"`
-	GivenName     string `json:"given_name"`
-	FamilyName    string `json:"family_name"`
-	Picture       string `json:"picture"`
-	Email         string `json:"email"`
-	EmailVerified bool   `json:"email_verified"`
-	Locale        string `json:"locale"`
 }
 
 func NewService(config *oauth2.Config) *AuthService {
@@ -68,19 +52,19 @@ func (a *AuthService) Client(ctx context.Context, tok *oauth2.Token) *http.Clien
 	return a.Config.Client(ctx, tok)
 }
 
-func (a *AuthService) FetchUserInfo(ctx context.Context, client *http.Client) (User, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", UserInfoUrl, nil)
+func (a *AuthService) FetchUserInfo(ctx context.Context, client *http.Client) (domain.GoogleUser, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", userInfoUrl, nil)
 	if err != nil {
-		return User{}, err
+		return domain.GoogleUser{}, err
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return User{}, err
+		return domain.GoogleUser{}, err
 	}
 	defer resp.Body.Close()
-	var user User
+	var user domain.GoogleUser
 	if err := json.NewDecoder(resp.Body).Decode(&user); err != nil {
-		return User{}, err
+		return domain.GoogleUser{}, err
 	}
 	return user, nil
 }

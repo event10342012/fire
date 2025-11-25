@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fire/internal/service"
 	"fire/internal/service/oauth2/google"
 	"net/http"
 
@@ -9,11 +10,13 @@ import (
 
 type OAuth2GoogleHandler struct {
 	googleAuthSvc google.AuthService
+	userSvc       service.UserService
 }
 
-func NewOAuth2GoogleHandler(svc google.AuthService) *OAuth2GoogleHandler {
+func NewOAuth2GoogleHandler(svc google.AuthService, userSvc service.UserService) *OAuth2GoogleHandler {
 	return &OAuth2GoogleHandler{
 		googleAuthSvc: svc,
+		userSvc:       userSvc,
 	}
 }
 
@@ -51,9 +54,15 @@ func (h *OAuth2GoogleHandler) Callback(ctx *gin.Context) {
 	}
 
 	httpClient := h.googleAuthSvc.Client(ctx.Request.Context(), tok)
-	user, err := h.googleAuthSvc.FetchUserInfo(ctx.Request.Context(), httpClient)
+	googleUser, err := h.googleAuthSvc.FetchUserInfo(ctx.Request.Context(), httpClient)
 	if err != nil {
 		ctx.String(http.StatusBadRequest, "userinfo failed: %v", err)
+		return
+	}
+
+	user, err := h.userSvc.FindOrCreateByGoogle(ctx, googleUser)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "Failed to find or create user: %v", err)
 		return
 	}
 
