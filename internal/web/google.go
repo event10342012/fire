@@ -38,6 +38,11 @@ func (h *OAuth2GoogleHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusInternalServerError, "Failed to generate state")
 		return
 	}
+	err = h.setStateCookie(ctx, state)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "Failed to set cookie")
+		return
+	}
 	ctx.Redirect(http.StatusFound, h.googleAuthSvc.AuthCodeURL(state))
 }
 
