@@ -3,20 +3,26 @@ package web
 import (
 	"fire/internal/service"
 	"fire/internal/service/oauth2/google"
+	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type OAuth2GoogleHandler struct {
-	googleAuthSvc google.AuthService
-	userSvc       service.UserService
+	googleAuthSvc   google.AuthService
+	userSvc         service.UserService
+	key             []byte
+	stateCookieName string
 }
 
 func NewOAuth2GoogleHandler(svc google.AuthService, userSvc service.UserService) *OAuth2GoogleHandler {
 	return &OAuth2GoogleHandler{
-		googleAuthSvc: svc,
-		userSvc:       userSvc,
+		googleAuthSvc:   svc,
+		userSvc:         userSvc,
+		key:             []byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgB"),
+		stateCookieName: "jwt-state",
 	}
 }
 
@@ -40,9 +46,14 @@ func (h *OAuth2GoogleHandler) Callback(ctx *gin.Context) {
 		ctx.String(http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
-	state := ctx.Query("state")
+	err := h.verifyState(ctx)
+	if err != nil {
+		ctx.String(http.StatusBadRequest, "Invalid state")
+		return
+	}
+
 	code := ctx.Query("code")
-	if state == "" || code == "" {
+	if code == "" {
 		ctx.String(http.StatusBadRequest, "Invalid request")
 		return
 	}
@@ -68,3 +79,43 @@ func (h *OAuth2GoogleHandler) Callback(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, user)
 }
+
+func (h *OAuth2GoogleHandler) setStateCookie(ctx *gin.Context, state string) error {
+	claims := stateClaims{
+		State: state,
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(h.key)
+	if err != nil {
+		return err
+	}
+	ctx.SetCookie(h.stateCookieName, tokenString, 0,
+		"/oath2/google/callback", "", false, true)
+	return nil
+}
+
+func (h *OAuth2GoogleHandler) verifyState(ctx *gin.Context) error {
+	state := ctx.Query("state")
+	ck, err := ctx.Cookie(h.stateCookieName)
+	if err != nil {
+		return fmt.Errorf("cookie not found")
+	}
+	token, err := jwt.ParseWithClaims(ck, &stateClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return h.key, nil
+	})
+	if err != nil {
+		return fmt.Errorf("invalid token: %v", err)
+	}
+	claims, ok := token.Claims.(*stateClaims)
+	if !ok || claims.State != state {
+		return fmt.Errorf("state not match")
+	}
+	return nil
+}
+
+type stateClaims struct {
+	jwt.RegisteredClaims
+	State string `json:"state"`
+}
+
+func (h *OAuth2GoogleHandler) Logout(ctx *gin.Context) {}
