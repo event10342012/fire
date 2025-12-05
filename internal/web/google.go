@@ -15,6 +15,7 @@ type OAuth2GoogleHandler struct {
 	userSvc         service.UserService
 	key             []byte
 	stateCookieName string
+	jwtHandler
 }
 
 func NewOAuth2GoogleHandler(svc google.AuthService, userSvc service.UserService) *OAuth2GoogleHandler {
@@ -82,6 +83,8 @@ func (h *OAuth2GoogleHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
+	h.setJWTToken(ctx, user.ID)
+
 	ctx.JSON(http.StatusOK, user)
 }
 
@@ -95,7 +98,7 @@ func (h *OAuth2GoogleHandler) setStateCookie(ctx *gin.Context, state string) err
 		return err
 	}
 	ctx.SetCookie(h.stateCookieName, tokenString, 0,
-		"/oath2/google/callback", "", false, true)
+		"/oauth2/google/callback", "", false, true)
 	return nil
 }
 

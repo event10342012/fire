@@ -5,20 +5,18 @@ import (
 	"fire/internal/domain"
 	"fire/internal/repository"
 	"fire/internal/service"
+	"net/http"
+	"time"
+
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	jwt "github.com/golang-jwt/jwt/v5"
-	"net/http"
-	"time"
 )
 
 const (
 	emailRegexPattern = "^\\w+([-+.]\\w+)*@\\w+([-.]\\w+)*\\.\\w+([-.]\\w+)*$"
 	// 和上面比起来，用 ` 看起来就比较清爽
 	passwordRegexPattern = `^(?=.*[A-Za-z])(?=.*\d)(?=.*[$@$!%*#?&])[A-Za-z\d$@$!%*#?&]{8,}$`
-
-	JwtKey = "6jfbF1G0D2WcRjAZRq3Y2K47AGdL9nWT"
 
 	bizLogin = "login"
 )
@@ -28,6 +26,7 @@ type UserHandler struct {
 	passwordRegexPattern *regexp.Regexp
 	userSvc              service.UserService
 	codeSvc              service.CodeService
+	jwtHandler
 }
 
 func NewUserHandler(userSvc service.UserService, codeSvc service.CodeService) *UserHandler {
@@ -326,27 +325,4 @@ func (handler *UserHandler) FindOrCreate(ctx *gin.Context, phone string) (domain
 	}
 	// may cause error due to replication delay between master and slave db
 	return handler.userSvc.FindByPhone(ctx, phone)
-}
-
-func (handler *UserHandler) setJWTToken(ctx *gin.Context, id int64) {
-	uc := UserClaims{
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 30)),
-		},
-		UserID:    id,
-		UserAgent: ctx.GetHeader("User-Agent"),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, uc)
-	tokenString, err := token.SignedString([]byte(JwtKey))
-	if err != nil {
-		ctx.String(http.StatusOK, "System error")
-		return
-	}
-	ctx.Header("x-jwt-token", tokenString)
-}
-
-type UserClaims struct {
-	jwt.RegisteredClaims
-	UserID    int64
-	UserAgent string
 }

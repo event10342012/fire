@@ -122,6 +122,7 @@ func (svc *userService) FindOrCreateByGoogle(ctx context.Context, googleUser dom
 		Email:      googleUser.Email,
 		GivenName:  googleUser.GivenName,
 		FamilyName: googleUser.FamilyName,
+		IsActive:   true,
 	})
 	if err != nil {
 		return domain.User{}, err

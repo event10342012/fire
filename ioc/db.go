@@ -3,12 +3,13 @@ package ioc
 import (
 	"fire/config"
 	"fire/internal/repository/dao"
-	"gorm.io/driver/mysql"
+
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func InitDB() *gorm.DB {
-	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
+	db, err := gorm.Open(postgres.Open(config.Config.DB.DSN))
 	if err != nil {
 		panic(err)
 	}
