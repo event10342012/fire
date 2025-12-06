@@ -3,9 +3,7 @@ package middleware
 import (
 	"encoding/gob"
 	"fire/internal/web"
-	"log"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,19 +26,7 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		authCode := ctx.GetHeader("Authorization")
-		if authCode == "" {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		segs := strings.Split(authCode, " ")
-		if len(segs) != 2 || segs[0] != "Bearer" {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		tokenStr := segs[1]
+		tokenStr := web.ExtractToken(ctx)
 		var uc web.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
 			return []byte(web.JwtKey), nil
@@ -56,21 +42,6 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		if uc.UserAgent != ctx.GetHeader("User-Agent") {
-			ctx.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		// refresh expiration time
-		expireTime := uc.ExpiresAt
-		if expireTime.Sub(time.Now()) < time.Hour*24 {
-			uc.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute * 30))
-			tokenStr, err = token.SignedString([]byte(web.JwtKey))
-			ctx.Header("x-jwt-token", tokenStr)
-			if err != nil {
-				log.Println(err)
-			}
-		}
 		ctx.Set("user", uc)
 	}
 }

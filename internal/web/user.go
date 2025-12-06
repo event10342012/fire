@@ -11,6 +11,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -44,6 +45,7 @@ func (handler *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup.POST("/signup", handler.Signup)
 	userGroup.GET("/profile", handler.Profile)
 	userGroup.POST("/edit", handler.Edit)
+	userGroup.POST("/refresh_token", handler.RefreshToken)
 
 	userGroup.POST("/login_sms/code/send", handler.SendSMSLoginCode)
 	userGroup.POST("login_sms", handler.LoginSMS)
@@ -325,4 +327,23 @@ func (handler *UserHandler) FindOrCreate(ctx *gin.Context, phone string) (domain
 	}
 	// may cause error due to replication delay between master and slave db
 	return handler.userSvc.FindByPhone(ctx, phone)
+}
+
+func (handler *UserHandler) RefreshToken(ctx *gin.Context) {
+	tokenStr := ExtractToken(ctx)
+	var rc RefreshClaims
+	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(token *jwt.Token) (interface{}, error) {
+		return JwtKey, nil
+	})
+
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	if !token.Valid {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+	handler.setJWTToken(ctx, rc.UserID)
+	ctx.Status(http.StatusOK)
 }
