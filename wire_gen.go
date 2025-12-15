@@ -12,6 +12,7 @@ import (
 	"fire/internal/repository/dao"
 	"fire/internal/service"
 	"fire/internal/web"
+	"fire/internal/web/jwt"
 	"fire/ioc"
 	"github.com/gin-gonic/gin"
 )
@@ -20,7 +21,8 @@ import (
 
 func InitWebserver() *gin.Engine {
 	cmdable := ioc.InitRedis()
-	v := ioc.InitGinMiddlewares(cmdable)
+	handler := jwt.NewRedisJWTHandler(cmdable)
+	v := ioc.InitGinMiddlewares(cmdable, handler)
 	db := ioc.InitDB()
 	userDAO := dao.NewUserDAO(db)
 	userCache := cache.NewUserCache(cmdable)
@@ -30,9 +32,9 @@ func InitWebserver() *gin.Engine {
 	codeRepository := repository.NewCodeRepository(codeCache)
 	smsService := ioc.InitSMS()
 	codeService := service.NewCodeService(codeRepository, smsService)
-	userHandler := web.NewUserHandler(userService, codeService)
+	userHandler := web.NewUserHandler(userService, codeService, handler)
 	authService := ioc.InitGoogleService()
-	oAuth2GoogleHandler := web.NewOAuth2GoogleHandler(authService, userService)
+	oAuth2GoogleHandler := web.NewOAuth2GoogleHandler(authService, userService, handler)
 	engine := ioc.InitWebServer(v, userHandler, oAuth2GoogleHandler)
 	return engine
 }

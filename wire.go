@@ -8,6 +8,7 @@ import (
 	"fire/internal/repository/dao"
 	"fire/internal/service"
 	"fire/internal/web"
+	ijwt "fire/internal/web/jwt"
 	"fire/ioc"
 
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,7 @@ func InitWebserver() *gin.Engine {
 		cache.NewCodeCache, cache.NewUserCache,
 		repository.NewUserRepository, repository.NewCodeRepository,
 		ioc.InitSMS, ioc.InitGoogleService, service.NewCodeService, service.NewUserService,
-		web.NewUserHandler, web.NewOAuth2GoogleHandler,
+		web.NewUserHandler, ijwt.NewRedisJWTHandler, web.NewOAuth2GoogleHandler,
 		ioc.InitGinMiddlewares,
 		ioc.InitWebServer)
 	return gin.Default()

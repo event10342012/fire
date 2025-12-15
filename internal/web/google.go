@@ -3,6 +3,7 @@ package web
 import (
 	"fire/internal/service"
 	"fire/internal/service/oauth2/google"
+	ijwt "fire/internal/web/jwt"
 	"fmt"
 	"net/http"
 
@@ -15,15 +16,16 @@ type OAuth2GoogleHandler struct {
 	userSvc         service.UserService
 	key             []byte
 	stateCookieName string
-	jwtHandler
+	ijwt.Handler
 }
 
-func NewOAuth2GoogleHandler(svc google.AuthService, userSvc service.UserService) *OAuth2GoogleHandler {
+func NewOAuth2GoogleHandler(svc google.AuthService, userSvc service.UserService, handler ijwt.Handler) *OAuth2GoogleHandler {
 	return &OAuth2GoogleHandler{
 		googleAuthSvc:   svc,
 		userSvc:         userSvc,
 		key:             []byte("k6CswdUm77WKcbM68UQUuxVsHSpTCwgB"),
 		stateCookieName: "jwt-state",
+		Handler:         handler,
 	}
 }
 
@@ -83,7 +85,11 @@ func (h *OAuth2GoogleHandler) Callback(ctx *gin.Context) {
 		return
 	}
 
-	h.setJWTToken(ctx, user.ID)
+	err = h.SetLoginToken(ctx, user.ID)
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "Failed to set login token: %v", err)
+		return
+	}
 
 	ctx.JSON(http.StatusOK, user)
 }

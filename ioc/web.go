@@ -2,6 +2,7 @@ package ioc
 
 import (
 	"fire/internal/web"
+	ijwt "fire/internal/web/jwt"
 	"fire/internal/web/middleware"
 	"fire/pkg/ginx/middleware/ratelimit"
 	"fire/pkg/limiter"
@@ -21,7 +22,7 @@ func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, googleHdl *
 	return server
 }
 
-func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
+func InitGinMiddlewares(redisClient redis.Cmdable, handler ijwt.Handler) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		cors.New(cors.Config{
 			AllowCredentials: true,
@@ -38,5 +39,6 @@ func InitGinMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 		}),
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
 		(&middleware.LoginJwtMiddlewareBuilder{}).CheckLogin(),
+		middleware.NewLoginJwtMiddlewareBuilder(handler).CheckLogin(),
 	}
 }

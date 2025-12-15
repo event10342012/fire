@@ -5,6 +5,7 @@ import (
 	"fire/internal/domain"
 	"fire/internal/repository"
 	"fire/internal/service"
+	ijwt "fire/internal/web/jwt"
 	"net/http"
 	"time"
 
@@ -27,21 +28,23 @@ type UserHandler struct {
 	passwordRegexPattern *regexp.Regexp
 	userSvc              service.UserService
 	codeSvc              service.CodeService
-	jwtHandler
+	ijwt.Handler
 }
 
-func NewUserHandler(userSvc service.UserService, codeSvc service.CodeService) *UserHandler {
+func NewUserHandler(userSvc service.UserService, codeSvc service.CodeService, handler ijwt.Handler) *UserHandler {
 	return &UserHandler{
 		emailRegexPattern:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRegexPattern: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		userSvc:              userSvc,
 		codeSvc:              codeSvc,
+		Handler:              handler,
 	}
 }
 
 func (handler *UserHandler) RegisterRoutes(server *gin.Engine) {
 	userGroup := server.Group("/users")
 	userGroup.POST("/login", handler.LoginJwt)
+	userGroup.POST("/logout", handler.LogoutJwt)
 	userGroup.POST("/signup", handler.Signup)
 	userGroup.GET("/profile", handler.Profile)
 	userGroup.POST("/edit", handler.Edit)
@@ -100,13 +103,26 @@ func (handler *UserHandler) LoginJwt(ctx *gin.Context) {
 	user, err := handler.userSvc.Login(ctx, req.Email, req.Password)
 	switch {
 	case err == nil:
-		handler.setJWTToken(ctx, user.ID)
+		err = handler.SetLoginToken(ctx, user.ID)
+		if err != nil {
+			ctx.String(http.StatusOK, "System error")
+			return
+		}
 		ctx.String(http.StatusOK, "Login success")
 	case errors.Is(err, service.ErrInvalidUserOrPassword):
 		ctx.String(http.StatusOK, "email or password is invalid")
 	default:
 		ctx.String(http.StatusOK, "System error")
 	}
+}
+
+func (handler *UserHandler) LogoutJwt(ctx *gin.Context) {
+	err := handler.ClearToken(ctx)
+	if err != nil {
+		ctx.String(http.StatusOK, "System error")
+		return
+	}
+	ctx.String(http.StatusOK, "Logout success")
 }
 
 func (handler *UserHandler) Signup(ctx *gin.Context) {
@@ -305,7 +321,13 @@ func (handler *UserHandler) LoginSMS(ctx *gin.Context) {
 			Msg:  "System error",
 		})
 	}
-	handler.setJWTToken(ctx, u.ID)
+	err = handler.SetLoginToken(ctx, u.ID)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+	}
 	ctx.JSON(http.StatusOK, Result{
 		Code: 0,
 		Msg:  "Login success",
@@ -330,10 +352,10 @@ func (handler *UserHandler) FindOrCreate(ctx *gin.Context, phone string) (domain
 }
 
 func (handler *UserHandler) RefreshToken(ctx *gin.Context) {
-	tokenStr := ExtractToken(ctx)
-	var rc RefreshClaims
+	tokenStr := handler.ExtractToken(ctx)
+	var rc ijwt.RefreshClaims
 	token, err := jwt.ParseWithClaims(tokenStr, &rc, func(token *jwt.Token) (interface{}, error) {
-		return JwtKey, nil
+		return ijwt.RCJWTKey, nil
 	})
 
 	if err != nil {
@@ -344,6 +366,17 @@ func (handler *UserHandler) RefreshToken(ctx *gin.Context) {
 		ctx.AbortWithStatus(http.StatusUnauthorized)
 		return
 	}
-	handler.setJWTToken(ctx, rc.UserID)
+
+	err = handler.CheckSession(ctx, rc.Ssid)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
+	err = handler.SetJWTToken(ctx, rc.UserID, rc.Ssid)
+	if err != nil {
+		ctx.AbortWithStatus(http.StatusInternalServerError)
+		return
+	}
 	ctx.Status(http.StatusOK)
 }

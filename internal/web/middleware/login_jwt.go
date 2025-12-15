@@ -2,7 +2,7 @@ package middleware
 
 import (
 	"encoding/gob"
-	"fire/internal/web"
+	ijwt "fire/internal/web/jwt"
 	"net/http"
 	"time"
 
@@ -11,6 +11,13 @@ import (
 )
 
 type LoginJwtMiddlewareBuilder struct {
+	ijwt.Handler
+}
+
+func NewLoginJwtMiddlewareBuilder(handler ijwt.Handler) *LoginJwtMiddlewareBuilder {
+	return &LoginJwtMiddlewareBuilder{
+		Handler: handler,
+	}
 }
 
 func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
@@ -26,10 +33,10 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 
-		tokenStr := web.ExtractToken(ctx)
-		var uc web.UserClaims
+		tokenStr := m.ExtractToken(ctx)
+		var uc ijwt.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
-			return []byte(web.JwtKey), nil
+			return ijwt.JWTKey, nil
 		})
 
 		if err != nil {
@@ -38,6 +45,12 @@ func (m *LoginJwtMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		}
 
 		if !token.Valid {
+			ctx.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		err = m.CheckSession(ctx, uc.Ssid)
+		if err != nil {
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
