@@ -38,7 +38,7 @@ func InitGinMiddlewares(redisClient redis.Cmdable, handler ijwt.Handler) []gin.H
 			MaxAge: 12 * time.Hour,
 		}),
 		ratelimit.NewBuilder(limiter.NewRedisSlidingWindowLimiter(redisClient, time.Second, 1000)).Build(),
-		(&middleware.LoginJwtMiddlewareBuilder{}).CheckLogin(),
+		(&middleware.LoginJwtMiddlewareBuilder{Handler: handler}).CheckLogin(),
 		middleware.NewLoginJwtMiddlewareBuilder(handler).CheckLogin(),
 	}
 }
