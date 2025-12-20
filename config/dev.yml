@@ -1,0 +1,8 @@
+test:
+  key: value
+
+redis:
+  addr: "localhost:6379"
+
+db:
+  dsn: "host=localhost user=leochen dbname=postgres search_path=fire port=5432 sslmode=disable TimeZone=Asia/Taipei"

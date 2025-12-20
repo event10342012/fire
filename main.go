@@ -2,11 +2,15 @@ package main
 
 import (
 	"fire/internal/web/middleware"
+	"log"
 
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/pflag"
+	"github.com/spf13/viper"
 )
 
 func main() {
+	initViper()
 	server := InitWebserver()
 	server.GET("/ping", func(ctx *gin.Context) {
 		ctx.String(200, "pong")
@@ -22,16 +26,15 @@ func useJwt(server *gin.Engine) {
 	server.Use(login.CheckLogin())
 }
 
-//func useSession(server *gin.Engine) {
-//	login := &middleware.LoginMiddlewareBuilder{}
-//	// 存储数据的，也就是你 userId 存哪里
-//	// 直接存 cookie
-//	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
-//		[]byte("6jfbF1G0D2WcRjAZRq3Y2K47AGdL9nWT"),
-//		[]byte("6jfbF1G0D2WcRjAZRq3Y2K47AGdL9nWS"))
-//
-//	if err != nil {
-//		panic(err)
-//	}
-//	server.Use(sessions.Sessions("ssid", store), login.CheckLogin())
-//}
+func initViper() {
+	cfile := pflag.StringP("config", "c", "config/config.yml", "config file path")
+	pflag.Parse()
+
+	viper.SetConfigType("yaml")
+	viper.SetConfigFile(*cfile)
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Load config file %s", viper.ConfigFileUsed())
+}
