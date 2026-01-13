@@ -14,11 +14,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func InitWebServer(mdls []gin.HandlerFunc, userHdl *web.UserHandler, googleHdl *web.OAuth2GoogleHandler) *gin.Engine {
+func InitWebServer(
+	mdls []gin.HandlerFunc,
+	userHdl *web.UserHandler,
+	googleHdl *web.OAuth2GoogleHandler,
+	artHdl *web.ArticleHandler,
+) *gin.Engine {
 	server := gin.Default()
 	server.Use(mdls...)
 	userHdl.RegisterRoutes(server)
 	googleHdl.RegisterRoutes(server)
+	artHdl.RegisterRoutes(server)
 	return server
 }
 

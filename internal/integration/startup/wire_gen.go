@@ -4,7 +4,7 @@
 //go:build !wireinject
 // +build !wireinject
 
-package main
+package startup
 
 import (
 	"fire/internal/repository"
@@ -35,11 +35,6 @@ func InitWebserver() *gin.Engine {
 	userHandler := web.NewUserHandler(userService, codeService, handler)
 	authService := ioc.InitGoogleService()
 	oAuth2GoogleHandler := web.NewOAuth2GoogleHandler(authService, userService, handler)
-	articleDAO := dao.NewArticleDAO(db)
-	articleRepository := repository.NewArticleRepository(articleDAO)
-	articleService := service.NewArticleService(articleRepository)
-	logger := ioc.InitLogger()
-	articleHandler := web.NewArticleHandler(articleService, logger)
-	engine := ioc.InitWebServer(v, userHandler, oAuth2GoogleHandler, articleHandler)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2GoogleHandler)
 	return engine
 }

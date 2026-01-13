@@ -13,6 +13,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.uber.org/zap"
 )
 
 const (
@@ -78,6 +79,7 @@ func (handler *UserHandler) Login(ctx *gin.Context) {
 		err = sess.Save()
 		if err != nil {
 			ctx.String(http.StatusOK, "System error")
+			zap.L().Error("session save error", zap.Error(err))
 			return
 		}
 		ctx.String(http.StatusOK, "Login success")
