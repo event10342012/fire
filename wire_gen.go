@@ -35,7 +35,7 @@ func InitWebserver() *gin.Engine {
 	userHandler := web.NewUserHandler(userService, codeService, handler)
 	authService := ioc.InitGoogleService()
 	oAuth2GoogleHandler := web.NewOAuth2GoogleHandler(authService, userService, handler)
-	articleDAO := dao.NewArticleDAO(db)
+	articleDAO := dao.NewArticleGormDAO(db)
 	articleRepository := repository.NewArticleRepository(articleDAO)
 	articleService := service.NewArticleService(articleRepository)
 	logger := ioc.InitLogger()

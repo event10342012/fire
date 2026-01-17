@@ -19,7 +19,7 @@ func InitWebserver() *gin.Engine {
 	wire.Build(
 		ioc.InitDB, ioc.InitRedis, ioc.InitLogger,
 		// dao
-		dao.NewUserDAO, dao.NewArticleDAO,
+		dao.NewUserDAO, dao.NewArticleGormDAO,
 		// cache
 		cache.NewCodeCache, cache.NewUserCache,
 		// repository

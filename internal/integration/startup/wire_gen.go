@@ -15,6 +15,7 @@ import (
 	"fire/internal/web/jwt"
 	"fire/ioc"
 	"github.com/gin-gonic/gin"
+	"github.com/google/wire"
 )
 
 // Injectors from wire.go:
@@ -35,6 +36,25 @@ func InitWebserver() *gin.Engine {
 	userHandler := web.NewUserHandler(userService, codeService, handler)
 	authService := ioc.InitGoogleService()
 	oAuth2GoogleHandler := web.NewOAuth2GoogleHandler(authService, userService, handler)
-	engine := ioc.InitWebServer(v, userHandler, oAuth2GoogleHandler)
+	articleDAO := dao.NewArticleGormDAO(db)
+	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	logger := ioc.InitLogger()
+	articleHandler := web.NewArticleHandler(articleService, logger)
+	engine := ioc.InitWebServer(v, userHandler, oAuth2GoogleHandler, articleHandler)
 	return engine
 }
+
+func InitArticleHandler() *web.ArticleHandler {
+	db := ioc.InitDB()
+	articleDAO := dao.NewArticleGormDAO(db)
+	articleRepository := repository.NewArticleRepository(articleDAO)
+	articleService := service.NewArticleService(articleRepository)
+	logger := ioc.InitLogger()
+	articleHandler := web.NewArticleHandler(articleService, logger)
+	return articleHandler
+}
+
+// wire.go:
+
+var thirdPartySet = wire.NewSet(ioc.InitDB, ioc.InitRedis, ioc.InitLogger)

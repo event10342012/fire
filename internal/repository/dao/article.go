@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -27,13 +28,16 @@ type ArticleGormDAO struct {
 	db *gorm.DB
 }
 
-func NewArticleDAO(db *gorm.DB) ArticleDAO {
+func NewArticleGormDAO(db *gorm.DB) ArticleDAO {
 	return &ArticleGormDAO{
 		db: db,
 	}
 }
 
 func (dao *ArticleGormDAO) Insert(ctx context.Context, article Article) (int64, error) {
+	now := time.Now().UnixMilli()
+	article.Ctime = now
+	article.Mtime = now
 	result := dao.db.WithContext(ctx).Create(&article)
 	if result.Error != nil {
 		return 0, result.Error
