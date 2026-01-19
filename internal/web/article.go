@@ -27,6 +27,7 @@ func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 
 func (h *ArticleHandler) Edit(ctx *gin.Context) {
 	type Req struct {
+		ID      int64  `json:"id"`
 		Title   string `json:"title"`
 		Content string `json:"content"`
 	}
@@ -38,6 +39,7 @@ func (h *ArticleHandler) Edit(ctx *gin.Context) {
 
 	uc := ctx.MustGet("user").(jwt.UserClaims)
 	id, err := h.svc.Save(ctx, domain.Article{
+		ID:      req.ID,
 		Title:   req.Title,
 		Content: req.Content,
 		Author: domain.Author{

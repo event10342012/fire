@@ -33,10 +33,10 @@ func (suite *ArticleHandlerSuite) SetupSuite() {
 	})
 	hdl.RegisterRoutes(server)
 	suite.server = server
+	suite.db.Exec("truncate table fire.articles RESTART IDENTITY")
 }
 
 func (suite *ArticleHandlerSuite) TearDownSuite() {
-	suite.db.Exec("truncate table fire.articles")
 }
 
 func (suite *ArticleHandlerSuite) TestEdit() {
@@ -52,7 +52,7 @@ func (suite *ArticleHandlerSuite) TestEdit() {
 		WantRes  Result[int64]
 	}{
 		{
-			name: "create article success",
+			name: "Create article success",
 			before: func(t *testing.T) {
 
 			},
@@ -75,6 +75,43 @@ func (suite *ArticleHandlerSuite) TestEdit() {
 			WantRes: Result[int64]{
 				Code: 0,
 				Msg:  "success",
+				Data: 1,
+			},
+		},
+		{
+			name: "Update article success",
+			before: func(t *testing.T) {
+				err := suite.db.Create(&dao.Article{
+					ID:       2,
+					AuthorID: 123,
+					Title:    "test title",
+					Content:  "test content",
+					Ctime:    456,
+					Mtime:    789,
+				}).Error
+				assert.NoError(t, err)
+			},
+			after: func(t *testing.T) {
+				var art dao.Article
+				err := suite.db.Where("id = ?", 2).First(&art).Error
+				assert.NoError(t, err)
+				assert.Equal(t, "test title updated", art.Title)
+				assert.Equal(t, "test content updated", art.Content)
+				assert.Equal(t, int64(123), art.AuthorID)
+				assert.True(t, art.Mtime > 789)
+				assert.True(t, art.Ctime == 456)
+				assert.True(t, art.ID == 2)
+			},
+			art: Article{
+				ID:      2,
+				Title:   "test title updated",
+				Content: "test content updated",
+			},
+			wantCode: http.StatusOK,
+			WantRes: Result[int64]{
+				Code: 0,
+				Msg:  "success",
+				Data: 2,
 			},
 		},
 	}
@@ -93,13 +130,12 @@ func (suite *ArticleHandlerSuite) TestEdit() {
 			suite.server.ServeHTTP(recoder, req)
 			assert.Equal(t, tc.wantCode, recoder.Code)
 			if recoder.Code != http.StatusOK {
-
+				panic(recoder.Body.String())
 			}
 			var res Result[int64]
 			err = json.Unmarshal(recoder.Body.Bytes(), &res)
 			assert.NoError(t, err)
-			assert.Equal(t, tc.WantRes.Msg, res.Msg)
-			assert.Equal(t, tc.WantRes.Code, res.Code)
+			assert.Equal(t, tc.WantRes, res)
 		})
 	}
 }
@@ -115,6 +151,7 @@ type Result[T any] struct {
 }
 
 type Article struct {
+	ID      int64  `json:"id"`
 	Title   string `json:"title"`
 	Content string `json:"content"`
 }
