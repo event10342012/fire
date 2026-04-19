@@ -9,6 +9,7 @@ import (
 type ArticleRepository interface {
 	Create(ctx context.Context, article domain.Article) (int64, error)
 	Update(ctx context.Context, article domain.Article) error
+	Publish(ctx context.Context, art domain.Article) (int64, error)
 }
 
 type CacheArticleRepository struct {
@@ -25,6 +26,10 @@ func (a *CacheArticleRepository) Create(ctx context.Context, article domain.Arti
 
 func (a *CacheArticleRepository) Update(ctx context.Context, article domain.Article) error {
 	return a.dao.UpdateByID(ctx, a.toEntity(article))
+}
+
+func (a *CacheArticleRepository) Publish(ctx context.Context, art domain.Article) (int64, error) {
+	return 1, nil
 }
 
 func (a *CacheArticleRepository) toEntity(art domain.Article) dao.Article {

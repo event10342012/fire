@@ -23,6 +23,7 @@ func NewArticleHandler(svc service.ArticleService, log logger.Logger) *ArticleHa
 func (h *ArticleHandler) RegisterRoutes(server *gin.Engine) {
 	g := server.Group("/articles")
 	g.POST("/edit", h.Edit)
+	g.POST("/publish", h.Publish)
 }
 
 func (h *ArticleHandler) Edit(ctx *gin.Context) {
@@ -52,6 +53,42 @@ func (h *ArticleHandler) Edit(ctx *gin.Context) {
 			Msg:  "System error",
 		})
 		h.log.Error("save article error", logger.Error(err), logger.Int64("user_id", uc.UserID))
+		return
+	}
+	ctx.JSON(http.StatusOK, Result{
+		Code: 0,
+		Msg:  "success",
+		Data: id,
+	})
+}
+
+func (h *ArticleHandler) Publish(ctx *gin.Context) {
+	type Req struct {
+		ID      int64  `json:"id"`
+		Title   string `json:"title"`
+		Content string `json:"content"`
+	}
+	var req Req
+	err := ctx.Bind(&req)
+	if err != nil {
+		return
+	}
+
+	uc := ctx.MustGet("user").(jwt.UserClaims)
+	id, err := h.svc.Publish(ctx, domain.Article{
+		ID:      req.ID,
+		Title:   req.Title,
+		Content: req.Content,
+		Author: domain.Author{
+			ID: uc.UserID,
+		},
+	})
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, Result{
+			Code: 5,
+			Msg:  "System error",
+		})
+		h.log.Error("publish article error", logger.Error(err), logger.Int64("user_id", uc.UserID))
 		return
 	}
 	ctx.JSON(http.StatusOK, Result{

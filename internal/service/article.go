@@ -8,20 +8,32 @@ import (
 
 type ArticleService interface {
 	Save(ctx context.Context, art domain.Article) (int64, error)
+	Publish(ctx context.Context, art domain.Article) (int64, error)
 }
 
 type articleService struct {
-	repo repository.ArticleRepository
+	readerRepo repository.ArticleReaderRepository
+	authorRepo repository.ArticleAuthorRepository
 }
 
-func NewArticleService(repo repository.ArticleRepository) ArticleService {
-	return &articleService{repo: repo}
+func NewArticleService(readerRepo repository.ArticleReaderRepository, authorRepo repository.ArticleAuthorRepository) ArticleService {
+	return &articleService{readerRepo: readerRepo, authorRepo: authorRepo}
 }
 
 func (s *articleService) Save(ctx context.Context, art domain.Article) (int64, error) {
 	if art.ID > 0 {
-		err := s.repo.Update(ctx, art)
+		err := s.readerRepo.Create(ctx, art)
 		return art.ID, err
 	}
-	return s.repo.Create(ctx, art)
+	return 1, nil
+}
+
+func (s *articleService) Publish(ctx context.Context, art domain.Article) (int64, error) {
+	id, err := s.authorRepo.Create(ctx, art)
+	if err != nil {
+		return 0, err
+	}
+	art.ID = id
+	err = s.readerRepo.Create(ctx, art)
+	return id, err
 }

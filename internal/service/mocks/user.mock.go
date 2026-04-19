@@ -115,6 +115,21 @@ func (mr *MockUserServiceMockRecorder) FindOrCreate(ctx, phone any) *gomock.Call
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreate", reflect.TypeOf((*MockUserService)(nil).FindOrCreate), ctx, phone)
 }
 
+// FindOrCreateByGoogle mocks base method.
+func (m *MockUserService) FindOrCreateByGoogle(ctx context.Context, googleUser domain.GoogleUser) (domain.User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindOrCreateByGoogle", ctx, googleUser)
+	ret0, _ := ret[0].(domain.User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindOrCreateByGoogle indicates an expected call of FindOrCreateByGoogle.
+func (mr *MockUserServiceMockRecorder) FindOrCreateByGoogle(ctx, googleUser any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindOrCreateByGoogle", reflect.TypeOf((*MockUserService)(nil).FindOrCreateByGoogle), ctx, googleUser)
+}
+
 // Login mocks base method.
 func (m *MockUserService) Login(ctx context.Context, email, password string) (domain.User, error) {
 	m.ctrl.T.Helper()

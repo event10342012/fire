@@ -5,11 +5,12 @@ import (
 	"fire/internal/domain"
 	"fire/internal/service"
 	svcmock "fire/internal/service/mocks"
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 )
 import "go.uber.org/mock/gomock"
 
@@ -155,7 +156,7 @@ func TestUserHandler_Signup(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			codeSvc, userSvc := tc.mock(ctrl)
-			handle := NewUserHandler(userSvc, codeSvc)
+			handle := NewUserHandler(userSvc, codeSvc, nil)
 
 			server := gin.Default()
 			handle.RegisterRoutes(server)
